@@ -166,12 +166,10 @@ class ConnectionManager:
 
     def __init__(self):
         self.connections: Dict[str, WebSocket] = {}
-        self.emotions_history = {} # Track recent emotions for cooldowns
 
     async def connect(self, username: str, websocket: WebSocket):
         await websocket.accept()
         self.connections[username] = websocket
-        self.emotions_history[username] = []
         await db.set_user_online(username, True)
         # Broadcast user online status
         await self.broadcast_system(f"{username} is online", exclude=username)
@@ -261,23 +259,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     })
                     continue
 
-                # ── Predict toxicity & emotion ────────────────
+                # ── Predict toxicity ─────────────────────────
                 tox = ml_service.predict_toxicity(text)
-                emotion = ml_service.predict_emotion(text)
-                new_reputation = await db.update_reputation(username, tox["is_flagged"])
-
-                # Check Cooldown bounds
-                self_em = manager.emotions_history.get(username, [])
-                self_em.append(emotion)
-                if len(self_em) > 5:
-                    self_em.pop(0)
-                
-                if self_em.count("Angry") + self_em.count("Frustrated") >= 3:
-                    await manager.send_to_user(username, {
-                        "type": "cooldown_suggestion",
-                        "message": "We've detected you might be feeling aggressive or frustrated. Consider taking a 2-minute breather."
-                    })
-                    self_em.clear() # Reset consecutive count
 
                 # ── Save message ─────────────────────────────
                 msg = await db.save_message({
@@ -288,7 +271,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     "toxicity_score": tox["score"],
                     "toxicity_label": tox["label"],
                     "is_flagged": tox["is_flagged"],
-                    "emotion": emotion
                 })
 
                 # ── Build response payload ───────────────────
@@ -303,8 +285,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     "toxicity_score": tox["score"],
                     "toxicity_label": tox["label"],
                     "is_flagged": tox["is_flagged"],
-                    "emotion": emotion,
-                    "reputation_score": new_reputation
                 }
 
                 # ── Send to sender (with toxicity info) ──────

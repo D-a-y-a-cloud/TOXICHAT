@@ -4,7 +4,7 @@ import ChatWindow from './ChatWindow';
 import Dashboard from '../Dashboard/Dashboard';
 import ToxicityAlert from './ToxicityAlert';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const WS_URL = API_URL.replace('http', 'ws');
 
 export default function ChatLayout({ user, onLogout }) {
@@ -14,7 +14,6 @@ export default function ChatLayout({ user, onLogout }) {
   const [activeChat, setActiveChat] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [alert, setAlert] = useState(null);
-  const [cooldownAlert, setCooldownAlert] = useState(null);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [receiverWarning, setReceiverWarning] = useState(null);
   
@@ -46,8 +45,6 @@ export default function ChatLayout({ user, onLogout }) {
       } else if (data.type === 'toxicity_warning') {
         setReceiverWarning(data);
         setTimeout(() => setReceiverWarning(null), 5000);
-      } else if (data.type === 'cooldown_suggestion') {
-        setCooldownAlert(data.message);
       } else if (data.type === 'system') {
         ws.send(JSON.stringify({ type: 'get_users' }));
       }
@@ -88,28 +85,6 @@ export default function ChatLayout({ user, onLogout }) {
     <>
       <ToxicityAlert alert={alert} onClose={() => setAlert(null)} />
       
-      {/* Cooldown Popup Modal */}
-      {cooldownAlert && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="glass-panel p-8 rounded-3xl max-w-md w-full border border-blue-500/30 text-center relative overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
-            <div className="w-20 h-20 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-              <span className="text-4xl">🧘</span>
-            </div>
-            <h2 className="text-2xl font-bold mb-4 text-white">Time to Breathe</h2>
-            <p className="text-gray-300 text-sm leading-relaxed mb-8">
-              {cooldownAlert}
-            </p>
-            <button 
-              onClick={() => setCooldownAlert(null)}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg"
-            >
-              I Understand
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Top Floating Dashboard Toggle */}
       <div className="absolute top-6 right-8 z-50 flex gap-4">
         <button 
@@ -124,43 +99,28 @@ export default function ChatLayout({ user, onLogout }) {
         </button>
       </div>
 
-      <div className="relative h-screen w-full flex p-0 md:p-6 max-w-7xl mx-auto md:pt-20 pb-0 md:pb-10 overflow-hidden">
-        {/* Sidebar wrapper */}
-        <div className={`w-full md:w-1/3 h-full ${activeChat || showDashboard ? 'hidden md:block' : 'block'}`}>
-          <Sidebar 
-            user={user} 
-            contacts={contacts} 
-            activeChat={activeChat} 
-            setActiveChat={(c) => { setActiveChat(c); setShowDashboard(false); }} 
-            onLogout={onLogout} 
-          />
-        </div>
+      <div className="h-screen w-full flex p-6 max-w-7xl mx-auto pt-20 pb-10">
+        <Sidebar 
+          user={user} 
+          contacts={contacts} 
+          activeChat={activeChat} 
+          setActiveChat={(c) => { setActiveChat(c); setShowDashboard(false); }} 
+          onLogout={onLogout} 
+        />
         
-        {/* Main Content wrapper */}
-        <div className={`w-full md:flex-1 h-full ${!activeChat && !showDashboard ? 'hidden md:flex' : 'flex'} flex-col`}>
-          {showDashboard ? (
-            <div className="flex-1 w-full relative">
-              <button 
-                onClick={() => setShowDashboard(false)}
-                className="md:hidden absolute top-4 left-4 z-50 bg-black/50 p-2 rounded-xl text-white"
-              >
-                ← Back
-              </button>
-              <Dashboard stats={dashboardStats} />
-            </div>
-          ) : (
-            <ChatWindow 
-              user={user}
-              activeChat={activeChat}
-              setActiveChat={setActiveChat}
-              messages={chatMessages}
-              input={input}
-              setInput={setInput}
-              sendMessage={sendMessage}
-              receiverWarning={receiverWarning}
-            />
-          )}
-        </div>
+        {showDashboard ? (
+          <Dashboard stats={dashboardStats} />
+        ) : (
+          <ChatWindow 
+            user={user}
+            activeChat={activeChat}
+            messages={chatMessages}
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+            receiverWarning={receiverWarning}
+          />
+        )}
       </div>
     </>
   );

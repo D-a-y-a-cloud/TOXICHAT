@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Send, Mic, Phone, Video } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
-export default function ChatWindow({ user, activeChat, setActiveChat, messages, input, setInput, sendMessage, receiverWarning }) {
+export default function ChatWindow({ user, activeChat, messages, input, setInput, sendMessage, receiverWarning }) {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -52,7 +52,7 @@ export default function ChatWindow({ user, activeChat, setActiveChat, messages, 
 
   if (!activeChat) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 glass-panel md:ml-4 rounded-3xl md:rounded-r-3xl md:border-l-0">
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 glass-panel ml-4 rounded-r-3xl border-l-0">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -71,16 +71,10 @@ export default function ChatWindow({ user, activeChat, setActiveChat, messages, 
   }
 
   return (
-    <div className="flex-1 flex flex-col relative z-10 glass-panel md:ml-4 rounded-3xl md:rounded-r-3xl md:border-l-0 overflow-hidden shadow-2xl h-full">
+    <div className="flex-1 flex flex-col relative z-10 glass-panel ml-4 rounded-r-3xl overflow-hidden shadow-2xl">
       
       {/* Header */}
       <div className="p-4 border-b border-space-border bg-white/5 backdrop-blur-md flex items-center gap-4 relative z-20">
-        <button 
-          onClick={() => setActiveChat(null)}
-          className="md:hidden flex items-center justify-center p-2 -ml-2 rounded-xl text-gray-400 hover:text-white bg-white/5 hover:bg-white/10"
-        >
-          ←
-        </button>  
         <div className="w-10 h-10 rounded-xl bg-gray-800 text-gray-300 flex items-center justify-center font-bold">
           {activeChat.display_name?.[0]?.toUpperCase() || '?'}
         </div>

@@ -76,8 +76,6 @@ async def create_user(username: str, hashed_password: str, display_name: str) ->
         "is_online": False,
         "warnings_count": 0,
         "is_blocked": False,
-        "reputation_score": 100,
-        "consecutive_safes": 0,
     }
     if _use_memory:
         if any(u["username"] == username for u in _memory_store["users"]):
@@ -127,42 +125,10 @@ async def increment_warning_count(username: str) -> int:
     return new_count
 
 
-async def update_reputation(username: str, is_flagged: bool) -> int:
-    user = await get_user(username)
-    if not user:
-        return 100
-        
-    score = user.get("reputation_score", 100)
-    consecutive = user.get("consecutive_safes", 0)
-    
-    if is_flagged:
-        score = max(0, score - 5)
-        consecutive = 0
-    else:
-        consecutive += 1
-        if consecutive >= 3:
-            score = min(200, score + 2)
-            consecutive = 0
-            
-    if _use_memory:
-        for u in _memory_store["users"]:
-            if u["username"] == username:
-                u["reputation_score"] = score
-                u["consecutive_safes"] = consecutive
-    else:
-        db = await get_db()
-        await db.users.update_one(
-            {"username": username},
-            {"$set": {"reputation_score": score, "consecutive_safes": consecutive}}
-        )
-    return score
-
-
 async def get_all_users() -> List[dict]:
     if _use_memory:
         return [{"username": u["username"], "display_name": u["display_name"],
-                 "is_online": u.get("is_online", False),
-                 "reputation_score": u.get("reputation_score", 100)} for u in _memory_store["users"]]
+                 "is_online": u.get("is_online", False)} for u in _memory_store["users"]]
     db = await get_db()
     cursor = db.users.find({}, {"_id": 0, "password": 0})
     return await cursor.to_list(length=500)

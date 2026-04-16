@@ -17,12 +17,7 @@ export default function Sidebar({ user, contacts, activeChat, setActiveChat, onL
           </div>
           <div className="flex-1 overflow-hidden">
             <h2 className="text-white font-bold truncate">{user.display_name}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-[10px] uppercase tracking-wider font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
-                Score: {user.reputation_score || 100}
-              </p>
-              <p className="text-xs text-emerald-400 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]"></span></p>
-            </div>
+            <p className="text-xs text-emerald-400 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]"></span> Online</p>
           </div>
         </div>
       </div>
@@ -67,9 +62,7 @@ export default function Sidebar({ user, contacts, activeChat, setActiveChat, onL
                   <h3 className={`font-medium truncate ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
                     {c.display_name || c.username}
                   </h3>
-                  <p className="text-[10px] text-indigo-400 font-semibold truncate mt-0.5">
-                    Reputation: {c.reputation_score || 100}
-                  </p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">Click to chat</p>
                 </div>
               </motion.div>
             );

@@ -11,9 +11,6 @@ _model = None
 _vectorizer = None
 _ready = False
 
-_emotion_model = None
-_emotion_vectorizer = None
-
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
 TFIDF_PATH = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
@@ -68,17 +65,6 @@ def load_model():
         print(f"❌ [CRITICAL] AI load error: {e}")
         _ready = False
 
-def load_emotion_model():
-    """Load the secondary DL Emotion classification model."""
-    global _emotion_model, _emotion_vectorizer
-    try:
-        import joblib
-        current_file = os.path.abspath(__file__)
-        models_dir = os.path.join(os.path.dirname(os.path.dirname(current_file)), "models")
-        _emotion_model = joblib.load(os.path.join(models_dir, "emotion_model.pkl"))
-        _emotion_vectorizer = joblib.load(os.path.join(models_dir, "emotion_vectorizer.pkl"))
-    except Exception as e:
-        print(f"⚠️ [WARNING] Emotion Model Missing or failed: {e}")
 
 def _clean_text(text: str) -> str:
     """Basic text cleaning."""
@@ -181,27 +167,6 @@ def predict_toxicity(text: str) -> dict:
 
     return {"score": round(score, 4), "label": label, "is_flagged": is_flagged}
 
-def predict_emotion(text: str) -> str:
-    """Classifies emotion of text via MLPClassifier"""
-    if not text or not text.strip(): return "Neutral"
-    if _emotion_model and _emotion_vectorizer:
-        try:
-            features = _emotion_vectorizer.transform([_clean_text(text)])
-            return str(_emotion_model.predict(features)[0])
-        except:
-            pass
-    
-    # Fallback heuristic
-    text_lower = text.lower()
-    angry_w = ['hate', 'kill', 'fuck', 'stupid', 'idiot', 'damn']
-    sad_w = ['depress', 'sad', 'cry', 'lonely', 'hurt']
-    frust_w = ['ugh', 'sigh', 'annoying', 'tired', 'give up']
-    
-    if any(w in text_lower for w in angry_w): return "Angry"
-    if any(w in text_lower for w in sad_w): return "Sad"
-    if any(w in text_lower for w in frust_w): return "Frustrated"
-    return "Neutral"
 
 # Load model on import
 load_model()
-load_emotion_model()
