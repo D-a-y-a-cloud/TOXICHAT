@@ -1,0 +1,38 @@
+================================================================================
+TOXICHAT: A SECURE, DEEP LEARNING MONITORED REAL-TIME MESSAGING APPLICATION
+Research Paper Information Document
+================================================================================
+
+1. ABSTRACT
+ToxiChat is a real-time, bidirectional messaging application that integrates a Multi-Layered Toxicity Moderation System powered by Advanced Deep Learning architectures. It utilizes AES-256 equivalent standard websocket streams through a FastAPI backend, a dynamic 3D React user interface, and an asynchronous pipeline for natural language classification. The defining architecture centers around identifying and mitigating online harassment using predictive AI, natively executing Voice-to-Text inference, and employing a strike-based limitation system enforcing localized database blockades dynamically on the WebSocket layer.
+
+2. SYSTEM ARCHITECTURE
+- Frontend: React 18, Tailwind CSS, Framer Motion for smooth micro-interactions, Three.js/R3F for a dynamic 3D visual background. Voice data is channeled through the native Web Speech API.
+- Backend: FastAPI (Asynchronous Python App), Motor (Async MongoDB), standard In-Memory Python data structures (fallback mode).
+- Bidirectional Layer: Python WebSockets natively broadcast payloads of type `message`, `system`, and `toxicity_alert`.
+
+3. DEEP LEARNING ARCHITECTURE
+Model Used: Multi-Layer Perceptron (MLP) Artificial Neural Network
+Library: scikit-learn (sklearn.neural_network.MLPClassifier)
+Vectorization: TF-IDF (Term Frequency-Inverse Document Frequency) bounding an n-gram range of (1, 2) up to 5000 max features.
+
+Network Depth & Specifications:
+- Input Layer: Dense vector size of ~5000 (derived from TF-IDF sparse matrix).
+- Hidden Layer 1: 128 Neurons
+- Hidden Layer 2: 64 Neurons
+- Activation Function: ReLU (Rectified Linear Unit), executing f(x) = max(0, x) to solve vanishing gradient problems.
+- Optimizer: Adam (Adaptive Moment Estimation), performing stochastic gradient descent with adaptive learning rates.
+- Depth Assessment: With an Input -> Hidden(128) -> Hidden(64) -> Output(2) architecture, the model operates deep multi-layered non-linear transformations enabling it to parse conversational nuances that standard logistic regression fails to map.
+
+4. TOXICITY ENFORCEMENT & SAFETY ALGORITHMS
+A distinct Multi-Tier algorithm handles enforcement:
+1. Signal Intake: Websocket receives message payload or Voice-Dictated parsed text.
+2. Safe Word Lexical Scan: A deterministic algorithm bypasses the neural network for absolute common phrases (e.g., "what are you doing") directly assigning a non-toxic vector. Deep Learning models often hallucinate toxicity on overly brief non-toxic phrases due to limited contextual feature matrices; thus, lexical gating functions as an anti-overfitting safety net.
+3. Neural Network Inference: Text pushes through the MLP. If the output probability `score >= 0.5`, it is flagged. An additional calibration step cross-verifies against deterministic keyword hits, significantly slashing probability if no toxic structures exist to reduce false-positive rates on normalized text.
+4. Three-Strike Soft Block: 3 confirmed warnings temporarily deny websocket POST capabilities for the user. Messages trigger an interception `system` payload sent back to the sender rather than broadcasting to the database.
+5. Twenty-Strike Hard Block: 20 warnings enforce a total lockout. The database modifies `is_blocked = True`. Future socket authorizations are intercepted, terminating connection handshakes with Code 4003.
+
+5. VOICE & MULTIMEDIA
+Voice dictation operates by executing `window.SpeechRecognition()`. The system samples audio locally at the browser level and parses it to a string transcript, bypassing the need for a convoluted audio-binary transfer to the DB. The transcript then populates the input stream, undergoing the standard Deep Learning toxicity scan before transmission. 
+
+Calling relies on a mockup UI interface located organically within the Chat header, designed to facilitate WebRTC socket bindings in future iterations.
