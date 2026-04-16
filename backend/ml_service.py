@@ -7,8 +7,13 @@ import re
 import numpy as np
 
 # Globals
-_toxic_pipeline = None
+_model = None
+_vectorizer = None
 _ready = False
+
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
+TFIDF_PATH = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
 
 # ══════════════════════════════════════════════════════════════
 # TOXICITY CONFIG
@@ -28,19 +33,34 @@ TOXIC_KEYWORDS = [
 
 
 def load_model():
-    """Load the Deep Learning Transformer from Hugging Face."""
-    global _toxic_pipeline, _ready
+    """Load the ML model and TF-IDF vectorizer from disk with Absolute Path Tracing."""
+    global _model, _vectorizer, _ready
     try:
-        from transformers import pipeline
+        import joblib
         import warnings
         
-        print(f"📡 [DEBUG] AI instantiating Deep Learning model from Hugging Face...")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            _toxic_pipeline = pipeline("text-classification", model="martin-ha/toxic-comment-model")
-            
-        _ready = True
-        print(f"✅ [SUCCESS] AI Linked: Deep Learning Pipeline Active")
+        # ── ABSOLUTE PATH FINDER ─────────────────────────────────────
+        # This finds the 'models' folder no matter how the app is started
+        current_file = os.path.abspath(__file__)
+        backend_dir = os.path.dirname(current_file)
+        root_dir = os.path.dirname(backend_dir)
+        models_dir = os.path.join(root_dir, "models")
+        
+        model_path = os.path.join(models_dir, "model.pkl")
+        tfidf_path = os.path.join(models_dir, "tfidf_vectorizer.pkl")
+        
+        print(f"📡 [DEBUG] AI searching in: {models_dir}")
+        
+        if os.path.exists(model_path) and os.path.exists(tfidf_path):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                _model = joblib.load(model_path)
+                _vectorizer = joblib.load(tfidf_path)
+            _ready = True
+            print(f"✅ [SUCCESS] AI Linked: SVM/MLP Model Loaded from {models_dir}")
+        else:
+            print(f"⚠️ [WARNING] AI Missing: Files at {model_path} not found.")
+            _ready = False
     except Exception as e:
         print(f"❌ [CRITICAL] AI load error: {e}")
         _ready = False
@@ -95,22 +115,18 @@ def predict_toxicity(text: str) -> dict:
     has_toxic_keyword = any(re.search(rf'\b{re.escape(kw)}\b', text_lower) for kw in TOXIC_KEYWORDS)
 
     # ── Use ML model if available ────────────────────────────
-    if _ready and _toxic_pipeline is not None:
+    if _ready and _model is not None and _vectorizer is not None:
         try:
             cleaned = _clean_text(text)
-            if not cleaned.strip():
-                return {"score": 0.05, "label": "non-toxic", "is_flagged": False}
-                
-            model_out = _toxic_pipeline(cleaned)[0]
-            label_pred = model_out['label'].lower() # e.g. 'toxic' or 'non-toxic'
-            model_score = float(model_out['score'])
-            
-            # The model outputs a probability for the winning label.
-            # Convert this to a single toxicity score between 0 and 1
-            if label_pred == 'toxic':
-                score = model_score
+            features = _vectorizer.transform([cleaned])
+            if hasattr(_model, 'predict_proba'):
+                proba = _model.predict_proba(features)[0]
+                score = float(proba[1]) if len(proba) > 1 else float(proba[0])
+            elif hasattr(_model, 'decision_function'):
+                decision = _model.decision_function(features)[0]
+                score = float(1 / (1 + np.exp(-decision)))
             else:
-                score = 1.0 - model_score
+                score = float(_model.predict(features)[0])
 
             # ── AI CALIBRATION (SMOOTHING) ───────────────────
             # Deep Learning (MLP) can hallucinate on small inputs.
