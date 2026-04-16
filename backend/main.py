@@ -171,13 +171,25 @@ class ConnectionManager:
         await websocket.accept()
         self.connections[username] = websocket
         await db.set_user_online(username, True)
-        # Broadcast user online status
+        
+        await self.broadcast_user_presence(username, True)
         await self.broadcast_system(f"{username} is online", exclude=username)
 
     async def disconnect(self, username: str):
         self.connections.pop(username, None)
         await db.set_user_online(username, False)
+        
+        await self.broadcast_user_presence(username, False)
         await self.broadcast_system(f"{username} is offline")
+
+    async def broadcast_user_presence(self, username: str, is_online: bool):
+        data = {"type": "user_presence", "username": username, "is_online": is_online}
+        for u, ws in list(self.connections.items()):
+            if u != username:
+                try:
+                    await ws.send_json(data)
+                except:
+                    pass
 
     async def send_to_user(self, username: str, data: dict):
         ws = self.connections.get(username)
@@ -285,6 +297,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     "toxicity_score": tox["score"],
                     "toxicity_label": tox["label"],
                     "is_flagged": tox["is_flagged"],
+                    "status": "sent"
                 }
 
                 # ── Send to sender (with toxicity info) ──────
@@ -336,6 +349,22 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 await manager.send_to_user(receiver, {
                     "type": "typing", "sender": username
                 })
+
+            elif msg_type == "message_delivered" or msg_type == "message_read":
+                msg_id = data.get("message_id")
+                sender = data.get("sender")
+                status = "read" if msg_type == "message_read" else "delivered"
+                
+                if msg_id:
+                    await db.update_message_status(msg_id, status)
+                
+                if sender:
+                    await manager.send_to_user(sender, {
+                        "type": "message_status_update",
+                        "message_id": msg_id,
+                        "status": status,
+                        "receiver": username
+                    })
 
             elif msg_type == "get_users":
                 users = await db.get_all_users()

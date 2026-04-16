@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Mic, Phone, Video } from 'lucide-react';
+import { Send, Mic, Phone, Video, ArrowLeft } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
-export default function ChatWindow({ user, activeChat, messages, input, setInput, sendMessage, receiverWarning }) {
+export default function ChatWindow({ user, activeChat, messages, input, setInput, sendMessage, receiverWarning, onBack, ws }) {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -13,6 +13,19 @@ export default function ChatWindow({ user, activeChat, messages, input, setInput
 
   const [isDictating, setIsDictating] = useState(false);
   const [callStatus, setCallStatus] = useState(null);
+
+  // Send message_read when viewing an unread message from the active contact
+  useEffect(() => {
+    if (!ws) return;
+    const unread = messages.filter(m => m.receiver === user.username && m.status !== 'read');
+    if (unread.length > 0) {
+      unread.forEach(m => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'message_read', message_id: m.id, sender: m.sender }));
+        }
+      });
+    }
+  }, [messages, ws, user.username]);
 
   const handleDictation = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -71,11 +84,17 @@ export default function ChatWindow({ user, activeChat, messages, input, setInput
   }
 
   return (
-    <div className="flex-1 flex flex-col relative z-10 glass-panel ml-4 rounded-r-3xl overflow-hidden shadow-2xl">
+    <div className="flex-1 flex flex-col relative z-10 bg-wa-bg md:rounded-r-3xl overflow-hidden shadow-2xl w-full h-full">
       
       {/* Header */}
-      <div className="p-4 border-b border-space-border bg-white/5 backdrop-blur-md flex items-center gap-4 relative z-20">
-        <div className="w-10 h-10 rounded-xl bg-gray-800 text-gray-300 flex items-center justify-center font-bold">
+      <div className="p-3 md:p-4 border-b border-wa-panel bg-wa-panel flex items-center gap-2 md:gap-4 relative z-20">
+        
+        {/* Mobile Back Button */}
+        <button onClick={onBack} className="md:hidden p-1.5 -ml-1 text-gray-300 hover:text-white transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-gray-600 text-gray-200 flex items-center justify-center font-bold">
           {activeChat.display_name?.[0]?.toUpperCase() || '?'}
         </div>
         <div className="flex-1">
@@ -124,7 +143,7 @@ export default function ChatWindow({ user, activeChat, messages, input, setInput
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col relative z-10">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 flex flex-col relative z-10">
         {messages.map((m, i) => (
           <MessageBubble key={m.id || i} message={m} isOwn={m.sender === user.username} />
         ))}
@@ -132,7 +151,7 @@ export default function ChatWindow({ user, activeChat, messages, input, setInput
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-space-border bg-black/40 backdrop-blur-md relative z-20">
+      <div className="p-3 md:p-4 border-t border-wa-panel bg-wa-bg relative z-20">
         <form onSubmit={sendMessage} className="flex gap-2">
           
           <motion.button 
@@ -155,7 +174,7 @@ export default function ChatWindow({ user, activeChat, messages, input, setInput
             onChange={e => setInput(e.target.value)}
             placeholder="Type or dictate a message..." 
             autoFocus 
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:bg-white/10 transition-all font-medium"
+            className="flex-1 bg-wa-panel border border-transparent rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-all font-medium"
           />
           <motion.button 
             whileTap={{ scale: 0.95 }}

@@ -49,6 +49,7 @@ class MessageOut(BaseModel):
     toxicity_score: float = 0.0
     toxicity_label: str = "non-toxic"
     is_flagged: bool = False
+    status: str = "sent"
 
 
 # ── Toxicity Models ──────────────────────────────────────────

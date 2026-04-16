@@ -4,10 +4,10 @@ import { Users, Search } from 'lucide-react';
 
 export default function Sidebar({ user, contacts, activeChat, setActiveChat, onLogout }) {
   return (
-    <div className="w-80 border-r border-space-border glass-panel rounded-l-3xl flex flex-col overflow-hidden relative z-10">
+    <div className="w-full h-full border-r border-space-border bg-wa-bg md:rounded-l-3xl flex flex-col overflow-hidden relative z-10">
       
       {/* Header */}
-      <div className="p-6 border-b border-white/5 bg-white/5 relative overflow-hidden">
+      <div className="p-4 md:p-6 border-b border-white/5 bg-wa-panel relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -41,10 +41,10 @@ export default function Sidebar({ user, contacts, activeChat, setActiveChat, onL
                 transition={{ delay: i * 0.05 }}
                 key={c.username}
                 onClick={() => setActiveChat(c)}
-                className={`p-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 group ${
+                className={`p-3 rounded-xl md:rounded-2xl cursor-pointer flex items-center gap-4 transition-all duration-300 group ${
                   isActive 
-                    ? 'bg-white/10 border border-white/20 shadow-lg' 
-                    : 'hover:bg-white/5 border border-transparent'
+                    ? 'bg-wa-panel shadow-lg' 
+                    : 'hover:bg-wa-panel/50 border border-transparent'
                 }`}
               >
                 <div className="relative">

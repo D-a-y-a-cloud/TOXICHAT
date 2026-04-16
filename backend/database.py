@@ -138,12 +138,24 @@ async def get_all_users() -> List[dict]:
 async def save_message(msg: dict) -> dict:
     msg["timestamp"] = datetime.utcnow().isoformat()
     msg["id"] = f"msg_{datetime.utcnow().timestamp()}"
+    msg["status"] = "sent"
     if _use_memory:
         _memory_store["messages"].append(msg)
     else:
         db = await get_db()
         await db.messages.insert_one(msg.copy())
     return msg
+
+
+async def update_message_status(msg_id: str, status: str):
+    if _use_memory:
+        for m in _memory_store["messages"]:
+            if m.get("id") == msg_id:
+                m["status"] = status
+                break
+    else:
+        db = await get_db()
+        await db.messages.update_one({"id": msg_id}, {"$set": {"status": status}})
 
 
 async def get_messages(user1: str, user2: str, limit: int = 50) -> List[dict]:

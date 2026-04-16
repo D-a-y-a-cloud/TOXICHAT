@@ -20,6 +20,12 @@ module.exports = {
           bg: '#0b0f19',
           panel: 'rgba(17, 24, 39, 0.7)',
           border: 'rgba(255, 255, 255, 0.1)'
+        },
+        wa: {
+          bg: '#111B21',
+          panel: '#202C33',
+          sender: '#005C4B',
+          receiver: '#2A3942'
         }
       },
       animation: {
